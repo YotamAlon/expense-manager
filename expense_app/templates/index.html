@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Manager & Budget Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">💳</div>
+        <div>
+          <h1>ExpenseManager</h1>
+          <span class="brand-tagline">Smart CSV Expense & Budget Management</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="currency-picker-container" title="Select Currency" data-i18n-title="select_currency">
+          <label for="currency-select" class="currency-label">🌐</label>
+          <select id="currency-select" class="currency-select" aria-label="Select Currency">
+            <option value="USD" data-symbol="$">$ USD (US Dollar)</option>
+            <option value="EUR" data-symbol="€">€ EUR (Euro)</option>
+            <option value="GBP" data-symbol="£">£ GBP (British Pound)</option>
+            <option value="ILS" data-symbol="₪">₪ ILS (Israeli Shekel)</option>
+            <option value="CAD" data-symbol="CA$">CA$ CAD (Canadian Dollar)</option>
+            <option value="AUD" data-symbol="A$">A$ AUD (Australian Dollar)</option>
+            <option value="JPY" data-symbol="¥">¥ JPY (Japanese Yen)</option>
+            <option value="CHF" data-symbol="CHF">CHF (Swiss Franc)</option>
+            <option value="INR" data-symbol="₹">₹ INR (Indian Rupee)</option>
+            <option value="CNY" data-symbol="¥">¥ CNY (Chinese Yuan)</option>
+            <option value="BRL" data-symbol="R$">R$ BRL (Brazilian Real)</option>
+            <option value="MXN" data-symbol="Mex$">Mex$ MXN (Mexican Peso)</option>
+            <option value="SEK" data-symbol="kr">kr SEK (Swedish Krona)</option>
+            <option value="NOK" data-symbol="kr">kr NOK (Norwegian Krone)</option>
+            <option value="DKK" data-symbol="kr">kr DKK (Danish Krone)</option>
+            <option value="PLN" data-symbol="zł">zł PLN (Polish Zloty)</option>
+            <option value="SGD" data-symbol="S$">S$ SGD (Singapore Dollar)</option>
+            <option value="NZD" data-symbol="NZ$">NZ$ NZD (New Zealand Dollar)</option>
+            <option value="HKD" data-symbol="HK$">HK$ HKD (Hong Kong Dollar)</option>
+            <option value="ZAR" data-symbol="R">R ZAR (South African Rand)</option>
+          </select>
+        </div>
+        <div class="lang-picker-container" title="Select Language / בחר שפה" data-i18n-title="select_language">
+          <label for="lang-select" class="lang-label">🗣️</label>
+          <select id="lang-select" class="lang-select" aria-label="Select Language">
+            <option value="en">English (EN)</option>
+            <option value="he">עברית (HE)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav class="nav-tabs-bar">
+    <div class="nav-container">
+      <button class="nav-tab active" data-tab="tab-dashboard">
+        <span class="tab-icon">📊</span> <span data-i18n="nav_dashboard">Dashboard</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-upload-expenses">
+        <span class="tab-icon">📤</span> <span data-i18n="nav_upload_expenses">Upload Expenses</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-budget">
+        <span class="tab-icon">🎯</span> <span data-i18n="nav_budget">Budget</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-transactions">
+        <span class="tab-icon">📑</span> <span data-i18n="nav_transactions">Transactions</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-rules">
+        <span class="tab-icon">⚡</span> <span data-i18n="nav_rules">Always-Set Rules</span> (<span id="nav-rules-count">0</span>)
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="main-content">
+    
+    <!-- Toast Alert Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="tab-dashboard" class="tab-pane active">
+      <!-- Month Selector Bar -->
+      <div class="month-selector-bar">
+        <div class="month-selector-inner">
+          <div class="month-nav-controls">
+            <button id="dash-month-prev" class="btn btn-outline btn-sm btn-icon" title="Previous Month" data-i18n-title="btn_prev_month"><span class="month-nav-arrow">◀</span></button>
+            <div class="month-select-wrapper">
+              <span class="month-icon">📅</span>
+              <select id="dash-month-select" class="form-control month-select" aria-label="Select Month">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <button id="dash-month-next" class="btn btn-outline btn-sm btn-icon" title="Next Month" data-i18n-title="btn_next_month"><span class="month-nav-arrow">▶</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metric Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label" data-i18n="total_spent">Total Spent</span>
+            <span class="stat-icon red">💸</span>
+          </div>
+          <div class="stat-value" id="dash-total-spent">$0.00</div>
+          <div class="stat-sub" id="dash-tx-count">0 transactions</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label" data-i18n="total_budget">Total Budget</span>
+            <span class="stat-icon blue">🎯</span>
+          </div>
+          <div class="stat-value" id="dash-total-budget">$0.00</div>
+          <div class="stat-sub" id="dash-budget-cat-count">0 budgeted categories</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label" data-i18n="remaining_budget">Remaining</span>
+            <span class="stat-icon green" id="dash-remaining-icon">💰</span>
+          </div>
+          <div class="stat-value" id="dash-total-remaining">$0.00</div>
+          <div class="stat-sub" id="dash-budget-status">Within budget</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label" data-i18n="rules_remembered">Rules Remembered</span>
+            <span class="stat-icon purple">⚡</span>
+          </div>
+          <div class="stat-value" id="dash-rules-count">0</div>
+          <div class="stat-sub" data-i18n="active_rules_sub">Active rules auto-categorizing</div>
+        </div>
+      </div>
+
+      <!-- Charts & Visuals Grid -->
+      <div class="dashboard-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <h3 data-i18n="spending_by_category">Spending by Category</h3>
+          </div>
+          <div class="panel-body chart-wrapper">
+            <div id="category-chart-empty" class="empty-state">
+              <p data-i18n="no_expenses_recorded">No spending data yet. Upload an expense CSV to see category breakdowns!</p>
+              <button class="btn btn-primary btn-sm" onclick="switchTab('tab-upload-expenses')" data-i18n="nav_upload_expenses">Upload Expenses</button>
+            </div>
+            <canvas id="categoryChart" style="max-height: 280px; display: none;"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3 data-i18n="budget_vs_actual">Budget vs Actual Spending</h3>
+            <button class="btn btn-outline btn-xs" onclick="switchTab('tab-budget')" data-i18n="nav_budget">Manage Budget</button>
+          </div>
+          <div class="panel-body">
+            <div id="budget-progress-list" class="progress-list">
+              <div class="empty-state">
+                <p data-i18n="no_budgets_configured">No budgets configured. Upload a budget CSV or add categories!</p>
+                <button class="btn btn-primary btn-sm" onclick="switchTab('tab-budget')" data-i18n="btn_set_budget">Set Budget</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: UPLOAD EXPENSES (Interactive Multi-Step Workflow) -->
+    <section id="tab-upload-expenses" class="tab-pane">
+      <div class="panel">
+        <div class="wizard-steps">
+          <div class="wizard-step active" id="step-ind-1">
+            <span class="step-num">1</span>
+            <span class="step-title" data-i18n="wizard_step_1">Upload CSV</span>
+          </div>
+          <div class="step-connector"></div>
+          <div class="wizard-step" id="step-ind-2">
+            <span class="step-num">2</span>
+            <span class="step-title" data-i18n="wizard_step_2">Map Columns</span>
+          </div>
+          <div class="step-connector"></div>
+          <div class="wizard-step" id="step-ind-3">
+            <span class="step-num">3</span>
+            <span class="step-title" data-i18n="wizard_step_3">Review & Categorize</span>
+          </div>
+        </div>
+
+        <!-- STEP 1: Upload File -->
+        <div id="expense-step-1" class="wizard-content active">
+          <div class="upload-dropzone" id="expenses-dropzone">
+            <div class="dropzone-icon">📁</div>
+            <h3 data-i18n="dropzone_title">Drag & Drop your Expenses CSV file here</h3>
+            <p data-i18n="dropzone_sub">Supports bank/credit card statements in CSV format (UTF-8)</p>
+            <label class="btn btn-primary">
+              <span data-i18n="browse_files">Browse Files</span>
+              <input type="file" id="expenses-file-input" accept=".csv,text/csv" hidden>
+            </label>
+          </div>
+        </div>
+
+        <!-- STEP 2: Map 3 Columns (Date, Business Name, Amount) -->
+        <div id="expense-step-2" class="wizard-content">
+          <div class="step-header">
+            <h2 data-i18n="step2_title">Specify the 3 Required Columns</h2>
+            <p class="text-muted" data-i18n="step2_sub">Tell us which columns in your CSV correspond to the <strong>Date</strong>, <strong>Business Name</strong>, and <strong>Amount</strong>.</p>
+          </div>
+
+          <div class="mapping-card">
+            <div class="mapping-grid">
+              <div class="form-group">
+                <label for="map-date-col">
+                  📅 <strong data-i18n="col_date">Date Column</strong> <span class="required">*</span>
+                </label>
+                <select id="map-date-col" class="form-control"></select>
+                <small class="form-text" data-i18n="col_date_hint">e.g., Transaction Date, Date, Post Date</small>
+              </div>
+
+              <div class="form-group">
+                <label for="map-biz-col">
+                  🏢 <strong data-i18n="col_business">Business Name Column</strong> <span class="required">*</span>
+                </label>
+                <select id="map-biz-col" class="form-control"></select>
+                <small class="form-text" data-i18n="col_business_hint">e.g., Description, Merchant, Payee, Name</small>
+              </div>
+
+              <div class="form-group">
+                <label for="map-amount-col">
+                  💵 <strong data-i18n="col_amount">Amount Column</strong> <span class="required">*</span>
+                </label>
+                <select id="map-amount-col" class="form-control"></select>
+                <small class="form-text" data-i18n="col_amount_hint">e.g., Amount, Total, Cost, Charge</small>
+              </div>
+            </div>
+
+            <div class="preview-box">
+              <h4 id="csv-preview-title" data-i18n="csv_preview_title">CSV Preview (First Rows):</h4>
+              <div class="table-responsive">
+                <table class="data-table" id="csv-preview-table">
+                  <thead id="csv-preview-thead"></thead>
+                  <tbody id="csv-preview-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="step-buttons">
+              <button class="btn btn-secondary" onclick="resetExpenseWizard()" data-i18n="btn_choose_diff_file">← Choose Different File</button>
+              <button class="btn btn-primary" id="btn-proceed-to-categorize" data-i18n="btn_proceed_to_categorize">
+                Next: Categorize Businesses →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Categorize & Submit Expenses (One by one or all at once) -->
+        <div id="expense-step-3" class="wizard-content">
+          <div class="step-header">
+            <h2 data-i18n="step3_title">Review & Submit Expenses</h2>
+            <p class="text-muted" data-i18n="step3_sub">
+              Assign a category to each expense and submit them <strong>one by one</strong> or all at once.
+              Check <strong>"Set Always"</strong> to automatically remember that category for the business name!
+            </p>
+          </div>
+
+          <!-- Status banner for already submitted tracking -->
+          <div id="expenses-tracking-banner" class="status-banner mb-3" style="display: none;"></div>
+
+          <!-- Expenses Table Section -->
+          <div class="card mb-4" id="section-pending-expenses">
+            <div class="card-header flex-between">
+              <div>
+                <h3 id="pending-count-title"><span data-i18n="pending_title">Expenses Pending Submission</span> (<span id="pending-count-num">0</span>)</h3>
+                <span class="text-muted" id="pending-subtitle" data-i18n="pending_sub">Submit expenses individually or all together.</span>
+              </div>
+              <div class="quick-bulk-actions flex-gap">
+                <button class="btn btn-xs btn-outline" id="btn-check-all-always" data-i18n="btn_check_all_always">Check all "Set Always"</button>
+                <button class="btn btn-xs btn-outline" id="btn-uncheck-all-always" data-i18n="btn_uncheck_all_always">Uncheck all</button>
+                <button class="btn btn-xs btn-primary" id="btn-submit-all-ready" data-i18n="btn_submit_all_ready">Submit All Ready</button>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="data-table" id="pending-expenses-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 4%; text-align: center;" data-i18n="th_num">#</th>
+                      <th style="width: 13%;" data-i18n="th_date">Date</th>
+                      <th style="width: 22%;" data-i18n="th_business">Business Name</th>
+                      <th style="width: 12%;" data-i18n="th_amount">Amount</th>
+                      <th style="width: 14%; text-align: center;" data-i18n="th_payments">Payments</th>
+                      <th style="width: 20%;" data-i18n="th_category">Category</th>
+                      <th style="width: 8%; text-align: center;">⚡ <span data-i18n="th_set_always">Set Always</span></th>
+                      <th style="width: 7%; text-align: center;" data-i18n="th_action">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pending-expenses-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-buttons">
+            <button class="btn btn-secondary" onclick="goToStep(2)" data-i18n="btn_choose_diff_file">← Back to Column Mapping</button>
+            <button class="btn btn-success btn-lg" id="btn-confirm-import" data-i18n="btn_submit_all_ready">
+              ✓ Submit All Remaining Ready Expenses
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: BUDGET MANAGEMENT -->
+    <section id="tab-budget" class="tab-pane">
+      <div class="grid-2col">
+        <!-- Budget Upload Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 data-i18n="upload_budget_title">📤 Upload Budget CSV</h3>
+          </div>
+          <div class="card-body">
+            <p class="text-muted" data-i18n="upload_budget_sub">
+              Upload a CSV file containing your spending budget with <strong>Category</strong> and <strong>Amount</strong> columns.
+            </p>
+            <div class="upload-dropzone compact" id="budget-dropzone">
+              <div class="dropzone-icon small">📁</div>
+              <p data-i18n="dropzone_budget">Drag & Drop Budget CSV</p>
+              <label class="btn btn-primary btn-sm">
+                <span data-i18n="btn_select_csv">Select CSV</span>
+                <input type="file" id="budget-file-input" accept=".csv,text/csv" hidden>
+              </label>
+            </div>
+
+            <!-- Budget Column Mapping Modal / Inline Step -->
+            <div id="budget-mapping-box" style="display: none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+              <h4 data-i18n="map_budget_columns">Map Budget Columns</h4>
+              <div class="form-group mb-2">
+                <label data-i18n="lbl_budget_cat_col">Category Column:</label>
+                <select id="budget-map-cat" class="form-control"></select>
+              </div>
+              <div class="form-group mb-3">
+                <label data-i18n="lbl_budget_amt_col">Amount Column:</label>
+                <select id="budget-map-amt" class="form-control"></select>
+              </div>
+              <button class="btn btn-success btn-sm w-100" id="btn-confirm-budget-upload" data-i18n="btn_import_budget">Import Budget</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Manual Budget Category -->
+        <div class="card">
+          <div class="card-header">
+            <h3 data-i18n="add_budget_title">➕ Add or Update Category Budget</h3>
+          </div>
+          <div class="card-body">
+            <form id="form-manual-budget">
+              <div class="form-group mb-3">
+                <label for="manual-budget-cat" data-i18n="lbl_category_name">Category Name</label>
+                <input type="text" id="manual-budget-cat" class="form-control" placeholder="e.g. Groceries or Dining Out" data-i18n-placeholder="ph_category_name" required list="category-datalist">
+                <datalist id="category-datalist"></datalist>
+              </div>
+              <div class="form-group mb-3">
+                <label for="manual-budget-amt"><span data-i18n="lbl_monthly_amount">Monthly Budget Amount</span> (<span class="currency-symbol-label">$</span>)</label>
+                <input type="number" step="0.01" min="0" id="manual-budget-amt" class="form-control" placeholder="e.g. 400.00" required>
+              </div>
+              <button type="submit" class="btn btn-primary w-100" data-i18n="btn_save_budget">Save Budget</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Budget Overview Table -->
+      <div class="card mt-4">
+        <div class="card-header flex-between">
+          <div>
+            <h3 data-i18n="budget_table_title">Current Budget & Spending Status</h3>
+            <span class="text-muted" id="budget-month-subtitle" data-i18n="budget_table_sub">Compare your allocated budget against actual expenses.</span>
+          </div>
+          <div class="flex-gap align-center">
+            <div class="month-select-wrapper">
+              <select id="budget-month-select" class="form-control form-control-sm month-select" aria-label="Select Budget Month">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <button class="btn btn-outline btn-xs text-danger" id="btn-clear-budgets" data-i18n="btn_clear_all_budgets">Clear All Budgets</button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="data-table" id="budget-table">
+              <thead>
+                <tr>
+                  <th data-i18n="th_cat">Category</th>
+                  <th data-i18n="th_budget">Budget</th>
+                  <th data-i18n="th_spent">Actual Spent</th>
+                  <th data-i18n="th_remaining">Remaining</th>
+                  <th style="width: 25%;" data-i18n="th_usage">Usage</th>
+                  <th data-i18n="th_status">Status</th>
+                  <th style="text-align: right;" data-i18n="th_action">Action</th>
+                </tr>
+              </thead>
+              <tbody id="budget-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: TRANSACTIONS -->
+    <section id="tab-transactions" class="tab-pane">
+      <div class="card">
+        <div class="card-header flex-between">
+          <div>
+            <h3 data-i18n="tx_table_title">All Recorded Expenses</h3>
+            <span class="text-muted" id="tx-summary-text" data-i18n="tx_table_sub">Showing all transactions</span>
+          </div>
+          <div class="flex-gap">
+            <button class="btn btn-outline btn-xs text-danger" id="btn-clear-transactions" data-i18n="btn_clear_all_tx">Clear All Expenses</button>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <div class="search-box">
+            <input type="text" id="tx-search-input" class="form-control" placeholder="Search by business name..." data-i18n-placeholder="ph_search_business">
+          </div>
+          <div class="category-filter">
+            <select id="tx-category-filter" class="form-control">
+              <option value="all" data-i18n="opt_all_categories">All Categories</option>
+            </select>
+          </div>
+          <div class="month-filter">
+            <select id="tx-month-filter" class="form-control" aria-label="Filter by Month">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+        </div>
+
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="data-table" id="transactions-table">
+              <thead>
+                <tr>
+                  <th data-i18n="th_date">Date</th>
+                  <th data-i18n="th_business">Business Name</th>
+                  <th data-i18n="th_category">Category</th>
+                  <th data-i18n="th_amount">Amount</th>
+                  <th style="text-align: right;" data-i18n="th_action">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: ALWAYS-SET RULES -->
+    <section id="tab-rules" class="tab-pane">
+      <div class="grid-2col">
+        <!-- Add Rule Manually -->
+        <div class="card">
+          <div class="card-header">
+            <h3 data-i18n="rules_tab_title">➕ Add Always-Set Rule</h3>
+          </div>
+          <div class="card-body">
+            <p class="text-muted" data-i18n="rules_tab_sub">Whenever a transaction with this business name is uploaded, it will automatically receive this category.</p>
+            <form id="form-manual-rule">
+              <div class="form-group mb-3">
+                <label for="rule-biz-input" data-i18n="lbl_rule_biz">Business Name or Pattern</label>
+                <input type="text" id="rule-biz-input" class="form-control" placeholder="e.g. PAYPAL * or Starbucks" data-i18n-placeholder="ph_rule_biz" required>
+                <small class="form-text" data-i18n="hint_rule_glob">Supports exact names or glob wildcards like <code>PAYPAL *</code>, <code>*AMAZON*</code>, <code>SHELL [0-9]*</code></small>
+              </div>
+              <div class="form-group mb-3">
+                <label for="rule-cat-input" data-i18n="lbl_rule_cat">Category</label>
+                <input type="text" id="rule-cat-input" class="form-control" placeholder="e.g. Subscriptions" data-i18n-placeholder="ph_rule_cat" list="category-datalist" required>
+              </div>
+              <button type="submit" class="btn btn-primary w-100" data-i18n="btn_save_rule">Save Rule</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Rules Info Box -->
+        <div class="card info-card">
+          <div class="card-header">
+            <h3 data-i18n="rules_info_title">⚡ How "Set Always" & Glob Rules Work</h3>
+          </div>
+          <div class="card-body">
+            <ul class="info-list">
+              <li data-i18n="rules_info_1"><strong>Zero friction:</strong> Once you check "Set Always" during expense upload, the app remembers the mapping forever.</li>
+              <li data-i18n="rules_info_2"><strong>Case-insensitive:</strong> "starbucks", "STARBUCKS", and "Starbucks" all match the same rule.</li>
+              <li data-i18n="rules_info_3"><strong>Exact match priority:</strong> Exact merchant matches always take priority over glob patterns.</li>
+              <li><strong data-i18n="rules_info_glob_title">Glob Pattern Options:</strong>
+                <ul style="margin-top: 0.35rem; padding-left: 1.2rem; font-size: 0.85rem; line-height: 1.5;">
+                  <li data-i18n="rules_info_glob_star"><code>*</code> &mdash; Matches any sequence of characters (e.g. <code>PAYPAL *</code> matches <code>PAYPAL *SPOTIFY</code> and <code>PAYPAL *NETFLIX</code>)</li>
+                  <li data-i18n="rules_info_glob_quest"><code>?</code> &mdash; Matches exactly one character (e.g. <code>STORE ??</code> matches <code>STORE 01</code>)</li>
+                  <li data-i18n="rules_info_glob_seq"><code>[seq]</code> &mdash; Matches any character in sequence (e.g. <code>SHELL [0-9]*</code>, <code>[A-Z]*</code>)</li>
+                  <li data-i18n="rules_info_glob_notseq"><code>[!seq]</code> &mdash; Matches any character NOT in sequence (e.g. <code>STORE [!0-9]*</code>)</li>
+                </ul>
+              </li>
+              <li data-i18n="rules_info_4"><strong>Always editable:</strong> You can edit or delete rules anytime right here.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved Rules Table -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h3 data-i18n="saved_rules_title">Saved Category Memory Rules</h3>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="data-table" id="rules-table">
+              <thead>
+                <tr>
+                  <th data-i18n="th_rule_pattern">Business Name</th>
+                  <th data-i18n="th_rule_category">Always Assigned Category</th>
+                  <th data-i18n="th_rule_created">Created / Updated</th>
+                  <th style="text-align: right;" data-i18n="th_action">Action</th>
+                </tr>
+              </thead>
+              <tbody id="rules-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Edit Transaction Category Modal -->
+  <div class="modal-backdrop" id="edit-tx-modal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 data-i18n="modal_edit_title">Edit Expense Category</h3>
+        <button class="modal-close" onclick="closeModal('edit-tx-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-tx-id">
+        <div class="form-group mb-3">
+          <label data-i18n="lbl_modal_biz">Business Name:</label>
+          <input type="text" id="edit-tx-biz" class="form-control" readonly disabled>
+        </div>
+        <div class="form-group mb-3">
+          <label data-i18n="lbl_modal_amt">Amount:</label>
+          <input type="text" id="edit-tx-amt" class="form-control" readonly disabled>
+        </div>
+        <div class="form-group mb-3">
+          <label for="edit-tx-category" data-i18n="lbl_modal_new_cat">Category:</label>
+          <input type="text" id="edit-tx-category" class="form-control" list="category-datalist" required>
+        </div>
+        <div class="form-check mb-3">
+          <input type="checkbox" id="edit-tx-set-always">
+          <label for="edit-tx-set-always" data-i18n="lbl_modal_always">Also update "Set Always" rule for this business</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('edit-tx-modal')" data-i18n="btn_cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-edit-tx" data-i18n="btn_save_changes">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
