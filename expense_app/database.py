@@ -1,10 +1,22 @@
 import sqlite3
 import os
+import sys
 import fnmatch
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
-DB_PATH = os.environ.get("EXPENSE_DB_PATH", os.path.join(os.path.dirname(__file__), "expenses.db"))
+
+def _get_default_db_path() -> str:
+    env_path = os.environ.get("EXPENSE_DB_PATH")
+    if env_path:
+        return env_path
+    if getattr(sys, "frozen", False):
+        # When compiled with PyInstaller, save DB alongside the executable
+        return os.path.join(os.path.dirname(sys.executable), "expenses.db")
+    return os.path.join(os.path.dirname(__file__), "expenses.db")
+
+
+DB_PATH = _get_default_db_path()
 
 
 def set_db_path(path: str):

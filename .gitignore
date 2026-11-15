@@ -14,6 +14,11 @@ __pycache__/
 *.xlsx
 *.xls
 
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
+
 # Environment & Virtual environments
 .env
 .env.*

@@ -1,4 +1,5 @@
 import os
+import sys
 import csv
 import io
 import uuid
@@ -35,10 +36,17 @@ from expense_app.database import (
     get_all_settings
 )
 
+
+def _get_resource_path(folder_name: str) -> str:
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, "expense_app", folder_name)
+    return os.path.join(os.path.dirname(__file__), folder_name)
+
+
 app = Flask(
     __name__,
-    template_folder=os.path.join(os.path.dirname(__file__), "templates"),
-    static_folder=os.path.join(os.path.dirname(__file__), "static")
+    template_folder=_get_resource_path("templates"),
+    static_folder=_get_resource_path("static")
 )
 app.secret_key = "expense-manager-secret-key-2026"
 

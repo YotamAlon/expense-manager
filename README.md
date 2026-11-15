@@ -59,8 +59,10 @@ ExpenseManager/
 │   └── database.py               # SQLite database setup & queries
 ├── tests/
 │   └── test_app.py               # Automated unit tests
-├── requirements.txt              # Dependencies (Flask)
+├── requirements.txt              # Dependencies (Flask, PyInstaller)
 ├── run.py                        # Top-level application runner
+├── build.py                      # PyInstaller build script (cross-platform)
+├── build.bat                     # Windows build batch script
 └── README.md
 ```
 
@@ -80,6 +82,27 @@ ExpenseManager/
 
 3. Open your web browser and navigate to:
    [http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+---
+
+## Compiling to Standalone Executable (.exe)
+
+You can compile ExpenseManager into a single portable `.exe` (which bundles all templates, styles, and scripts):
+
+```powershell
+# Using Python
+python build.py
+
+# Or using the Windows batch script
+.\build.bat
+```
+
+The resulting executable will be generated at:
+```text
+dist/ExpenseManager.exe
+```
+
+When launched, the executable automatically opens your default browser at `http://127.0.0.1:5000` and saves `expenses.db` persistently in the same folder as the `.exe`.
 
 ---
 
